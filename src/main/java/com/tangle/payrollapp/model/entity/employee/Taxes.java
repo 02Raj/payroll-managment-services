@@ -11,10 +11,10 @@ import org.springframework.data.mongodb.core.mapping.Field;
 public class Taxes {
 
     @Field(name = "filing_status_fed")
-    private String filingStatusFed;
+    private FilingStatus filingStatusFed;
 
     @Field(name = "filing_status_state")
-    private String filingStatusState;
+    private FilingStatus filingStatusState;
 
     @Field(name = "w4_part2_multiple_jobs")
     private Boolean w4Part2MultipleJobs;

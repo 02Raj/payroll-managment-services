@@ -1,6 +1,7 @@
 package com.tangle.payrollapp.dto.employee;
 
 import com.tangle.payrollapp.model.entity.employee.EmploymentType;
+import com.tangle.payrollapp.model.entity.employee.FilingStatus;
 import com.tangle.payrollapp.model.entity.employee.PayFrequency;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -38,8 +39,8 @@ public class GetEmployeeResponse {
         private Double vacationRate;
         private LocalDate hireDate;
         private LocalDate birthDate;
-        private String filingStatusFed;
-        private String filingStatusState;
+        private FilingStatus filingStatusFed;
+        private FilingStatus filingStatusState;
         private Boolean w4Part2MultipleJobs;
         private Boolean w4Part2a;
         private Double claimDependent;

@@ -34,12 +34,12 @@ public class CompanyController {
         return ResponseEntity.ok(response);
     }
 
-
     @GetMapping("/get/all")
     public ResponseEntity<CompanyResponse> getAllCompanies(
-            @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size) {
+            @RequestParam("page") int page,
+            @RequestParam("size") int size) {
         CompanyResponse response = companyService.getAllCompanies(page, size);
         return ResponseEntity.ok(response);
     }
+
 }

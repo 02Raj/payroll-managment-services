@@ -14,5 +14,5 @@ public interface CompanyRepository extends MongoRepository<Company, String> {
 
     Optional<Company> findByEmail(String email);
 
-
+    Optional<Company> findByUsername(String username);
 }

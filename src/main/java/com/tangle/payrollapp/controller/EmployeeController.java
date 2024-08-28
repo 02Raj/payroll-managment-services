@@ -63,6 +63,7 @@ public class EmployeeController {
 
 
 
+
 //    @GetMapping("/getAllBasicByCompanyId/{companyId}")
 //    public ResponseEntity<List<EmployeeResponse>> getAllBasicEmployeesByCompanyId(@PathVariable String companyId) {
 //        List<EmployeeResponse> response = employeeService.getAllBasicEmployeesByCompanyId(companyId);

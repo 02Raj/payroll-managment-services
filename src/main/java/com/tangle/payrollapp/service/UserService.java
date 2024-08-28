@@ -26,11 +26,14 @@ import com.tangle.payrollapp.model.entity.Role;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class UserService {
-
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     @Autowired
     private UserRepository userRepository;
 
@@ -45,6 +48,8 @@ public class UserService {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+
 
     public CreateUserResponse createUser(String username, String password, String firstName, String lastName, String companyId, String roleName, String email) throws UserServiceException {
 
@@ -89,15 +94,21 @@ public class UserService {
 
     public LoginResponse loginService(String userName, String password) throws UserServiceException {
 
-        User user = userRepository.findByUsername(userName);
-        if (user == null || !passwordEncoder.matches(password, user.getPassword())) {
+
+        User user = userRepository.findByUsername(userName)
+                .orElseThrow(() -> new UserServiceException("Invalid username or password"));
+
+
+        if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new UserServiceException("Invalid username or password");
         }
+
 
         Role role = user.getRole();
         if (role == null) {
             throw new UserServiceException("User role not found");
         }
+
 
         String companyName = null;
         String companyId = user.getCompanyId();
@@ -110,12 +121,12 @@ public class UserService {
 
 
         String jwt = jwtUtil.generateToken(user.getUsername());
-
-
         String refreshToken = jwtUtil.generateRefreshToken(user.getUsername());
+
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String created = LocalDateTime.now().format(formatter);
+
 
         LoginResponse.Result result = new LoginResponse.Result(
                 user.getId(),
@@ -130,13 +141,14 @@ public class UserService {
                 created
         );
 
-        String message = "Login successful";
 
         System.out.println("Login successful for user: " + user.getUsername());
 
 
+        String message = "Login successful";
         return new LoginResponse(message, jwt, refreshToken, result);
     }
+
 
     public UpdateUserResponse updateUser(String userId, String username, String password, String firstName, String lastName, String companyId, String roleName, String email) throws UserServiceException {
         Optional<User> optionalUser = userRepository.findById(String.valueOf(userId));
@@ -216,44 +228,64 @@ public class UserService {
     }
 
     public SearchResponse searchUsers(SearchRequest request) throws UserServiceException {
-        String keyword = request.getKeyword();
-        String companyId = request.getCompanyId();
-        int pageSize = request.getPageSize();
-        int currentPage = request.getCurrentPage();
-        String sortBy = request.getSortBy();
-        String orderBy = request.getOrderBy();
+        try {
+            String keyword = request.getKeyword();
+            String companyId = request.getCompanyId();
+            int pageSize = request.getPageSize();
+            int currentPage = request.getCurrentPage();
+            String sortBy = request.getSortBy();
+            String orderBy = request.getOrderBy();
 
-        Sort sort = orderBy.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(currentPage, pageSize, sort);
+            Sort sort = orderBy.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+            Pageable pageable = PageRequest.of(currentPage, pageSize, sort);
 
-        Page<User> usersPage = userRepository.findByCompanyIdAndFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrUsernameContainingIgnoreCaseOrEmailContainingIgnoreCase(
-                companyId, keyword, keyword, keyword, keyword, pageable);
+            logger.debug("Searching for users with keyword: {}, companyId: {}", keyword, companyId);
 
-        List<User> users = usersPage.getContent();
+            Page<User> usersPage = userRepository.findByCompanyIdAndFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrUsernameContainingIgnoreCaseOrEmailContainingIgnoreCase(
+                    companyId, keyword, keyword, keyword, keyword, pageable);
 
-        List<SearchResponse.UserResult> userResults = users.stream().map(user -> {
-            SearchResponse.UserResult result = new SearchResponse.UserResult();
-            result.setId(user.getId());
-            result.setUserName(user.getUsername());
-            result.setFirstName(user.getFirstName());
-            result.setLastName(user.getLastName());
-            result.setEmail(user.getEmail());
-            result.setIsActive(true);
-            result.setRole(user.getRole().getName());
-            result.setRoleId(user.getRole().getId());
+            List<User> users = usersPage.getContent();
+
+            List<SearchResponse.UserResult> userResults = users.stream().map(user -> {
+                SearchResponse.UserResult result = new SearchResponse.UserResult();
+                result.setId(user.getId());
+                result.setUserName(user.getUsername());
+                result.setFirstName(user.getFirstName());
+                result.setLastName(user.getLastName());
+                result.setEmail(user.getEmail());
+                result.setIsActive(true);
 
 
-            Optional<Company> companyOptional = companyRepository.findById(user.getCompanyId());
-            String companyName = companyOptional.map(Company::getCompanyName).orElse("Unknown Company");
-            result.setCompany(companyName);
+                if (user.getRole() != null) {
+                    result.setRole(user.getRole().getName());
+                    result.setRoleId(user.getRole().getId());
+                } else {
+                    result.setRole("Unknown Role");
+                    result.setRoleId(null);
+                }
 
-            result.setCompanyId(user.getCompanyId());
-            return result;
-        }).collect(Collectors.toList());
 
-        String message = "Users retrieved successfully";
-        return new SearchResponse(message, userResults);
+                if (user.getCompanyId() != null) {
+                    Optional<Company> companyOptional = companyRepository.findById(user.getCompanyId());
+                    String companyName = companyOptional.map(Company::getCompanyName).orElse("Unknown Company");
+                    result.setCompany(companyName);
+                    result.setCompanyId(user.getCompanyId());
+                } else {
+                    result.setCompany("No Company Assigned");
+                    result.setCompanyId(null);
+                }
+
+                return result;
+            }).collect(Collectors.toList());
+
+            String message = "Users retrieved successfully";
+            return new SearchResponse(message, userResults);
+        } catch (Exception e) {
+            logger.error("Error during search: ", e);
+            throw new UserServiceException("An unexpected error occurred during search", e);
+        }
     }
+
 
     public GetUserResponse getUserById(String userId) throws UserServiceException {
 
@@ -303,7 +335,8 @@ public class UserService {
         return new RefreshTokenResponse(newAccessToken, newRefreshToken);
     }
 
-    public User findByUsername(String username) {
+    public Optional<User> findByUsername(String username) {
         return userRepository.findByUsername(username);
     }
+
 }

@@ -7,9 +7,12 @@ import com.tangle.payrollapp.dto.Pagination;
 import com.tangle.payrollapp.dto.company.CompanyDetailsResponse;
 import com.tangle.payrollapp.dto.company.CompanyRequest;
 import com.tangle.payrollapp.dto.company.CompanyResponse;
+import com.tangle.payrollapp.model.entity.Role;
 import com.tangle.payrollapp.model.entity.User;
 import com.tangle.payrollapp.model.entity.company.*;
 import com.tangle.payrollapp.repository.CompanyRepository;
+import com.tangle.payrollapp.repository.RoleRepository;
+import com.tangle.payrollapp.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,12 +23,20 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
+import org.springframework.security.crypto.password.PasswordEncoder;
 @Service
 public class CompanyService {
 
     @Autowired
     private CompanyRepository companyRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private RoleRepository roleRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -86,10 +97,18 @@ public class CompanyService {
 //    }
 public CompanyResponse createAccount(CompanyRequest request) {
 
-    Optional<Company> existingUserByUsername = companyRepository.findByEmail(request.getEmail());
-    if (existingUserByUsername.isPresent()) {
-        throw new IllegalStateException("A user with this username already exists: " + request.getEmail());
+
+    Optional<Company> existingCompanyByEmail = companyRepository.findByEmail(request.getEmail());
+    if (existingCompanyByEmail.isPresent()) {
+        throw new IllegalStateException("A company with this email already exists: " + request.getEmail());
     }
+
+
+    Optional<User> existingUserByUsername = userRepository.findByUsername(request.getUsername());
+    if (existingUserByUsername.isPresent()) {
+        throw new IllegalStateException("A user with this username already exists: " + request.getUsername());
+    }
+
 
     Company company = new Company(
             request.getCompanyName(),
@@ -123,16 +142,40 @@ public CompanyResponse createAccount(CompanyRequest request) {
             request.getUsername(),
             request.getFirstName(),
             request.getLastName(),
-            request.getPassword()
+            passwordEncoder.encode(request.getPassword())
     );
 
+
     companyRepository.save(company);
+
+
+    Role companyAdminRole = roleRepository.findByName("companyAdmin");
+    if (companyAdminRole == null) {
+        companyAdminRole = new Role("companyAdmin");
+        roleRepository.save(companyAdminRole);
+    }
+
+
+    User user = new User();
+    user.setFirstName(request.getFirstName());
+    user.setLastName(request.getLastName());
+    user.setUsername(request.getUsername());
+    user.setPassword(passwordEncoder.encode(request.getPassword()));
+    user.setEmail(request.getEmail().toLowerCase());
+    user.setCompanyId(company.getId());
+    user.setCompanyName(company.getCompanyName());
+    user.setRole(companyAdminRole);
+
+
+    userRepository.save(user);
+
 
     String message = "Account created successfully";
     CompanyResponse.Result result = new CompanyResponse.Result(company.getId());
 
     return new CompanyResponse(message, Collections.singletonList(result));
 }
+
 
     public CompanyResponse updateCompany(String companyId, CompanyRequest request) {
         Company company = companyRepository.findById(companyId)

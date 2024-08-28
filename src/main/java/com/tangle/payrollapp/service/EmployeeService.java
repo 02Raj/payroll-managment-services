@@ -26,13 +26,11 @@ public class EmployeeService {
 
     public EmployeeResponse createEmployee(EmployeeRequest employeeRequest) {
 
-
+        // Create a new Employee entity
         Employee employee = new Employee();
-
-
         employee.setCompanyId(employeeRequest.getCompanyId());
 
-
+        // Set Contact Information
         ContactInformation contactInformation = new ContactInformation();
         contactInformation.setFirstName(employeeRequest.getFirstName());
         contactInformation.setLastName(employeeRequest.getLastName());
@@ -59,8 +57,8 @@ public class EmployeeService {
 
         // Set Taxes
         Taxes taxes = new Taxes();
-        taxes.setFilingStatusFed(employeeRequest.getFilingStatusFed());
-        taxes.setFilingStatusState(employeeRequest.getFilingStatusState());
+        taxes.setFilingStatusFed(employeeRequest.getFilingStatusFed()); // Use enum
+        taxes.setFilingStatusState(employeeRequest.getFilingStatusState()); // Use enum
         taxes.setW4Part2MultipleJobs(employeeRequest.getW4Part2MultipleJobs());
         taxes.setW4Part2a(employeeRequest.getW4Part2a());
         taxes.setClaimDependent(employeeRequest.getClaimDependent());
@@ -95,6 +93,7 @@ public class EmployeeService {
 
         return new EmployeeResponse(message, result);
     }
+
 
 
 
@@ -174,6 +173,7 @@ public class EmployeeService {
 
 
     public GetEmployeeResponse getEmployeeById(String employeeId) {
+
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new IllegalStateException("Employee not found with id: " + employeeId));
 
@@ -220,17 +220,16 @@ public class EmployeeService {
         );
 
 
-        return new GetEmployeeResponse("Employee retrieved successfully", result);
+        return new GetEmployeeResponse("Employee get successfully", result);
     }
+
 
 
     public EmployeeListResponse getAllEmployeesByCompanyId(String companyId, int page, int size) {
 
         Pageable pageable = PageRequest.of(page, size);
 
-
         Page<Employee> employeePage = employeeRepository.findByCompanyId(companyId, pageable);
-
 
         List<EmployeeListResponse.EmployeeResult> results = employeePage.getContent().stream()
                 .map(employee -> new EmployeeListResponse.EmployeeResult(
@@ -251,14 +250,12 @@ public class EmployeeService {
                 ))
                 .collect(Collectors.toList());
 
-
         Pagination pagination = new Pagination(
                 employeePage.getNumber(),
                 employeePage.getSize(),
                 employeePage.getTotalElements(),
                 employeePage.getTotalPages()
         );
-
 
         return new EmployeeListResponse("Employees retrieved successfully", results, pagination);
     }
