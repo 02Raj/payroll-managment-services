@@ -26,11 +26,11 @@ public class EmployeeService {
 
     public EmployeeResponse createEmployee(EmployeeRequest employeeRequest) {
 
-        // Create a new Employee entity
+
         Employee employee = new Employee();
         employee.setCompanyId(employeeRequest.getCompanyId());
 
-        // Set Contact Information
+
         ContactInformation contactInformation = new ContactInformation();
         contactInformation.setFirstName(employeeRequest.getFirstName());
         contactInformation.setLastName(employeeRequest.getLastName());
@@ -41,7 +41,7 @@ public class EmployeeService {
         contactInformation.setState(employeeRequest.getState());
         contactInformation.setZipCode(employeeRequest.getZipCode());
 
-        // Set Employment Information
+
         EmploymentInformation employmentInformation = new EmploymentInformation();
         employmentInformation.setEmploymentType(employeeRequest.getEmploymentType());
         employmentInformation.setPayFrequency(employeeRequest.getPayFrequency());
@@ -51,11 +51,11 @@ public class EmployeeService {
         employmentInformation.setSickRate(employeeRequest.getSickRate());
         employmentInformation.setVacationRate(employeeRequest.getVacationRate());
 
-        // Directly use the LocalDate values
+
         employmentInformation.setHireDate(employeeRequest.getHireDate());
         employmentInformation.setBirthDate(employeeRequest.getBirthDate());
 
-        // Set Taxes
+
         Taxes taxes = new Taxes();
         taxes.setFilingStatusFed(employeeRequest.getFilingStatusFed()); // Use enum
         taxes.setFilingStatusState(employeeRequest.getFilingStatusState()); // Use enum

@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 @Service
 public class UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+
     @Autowired
     private UserRepository userRepository;
 
